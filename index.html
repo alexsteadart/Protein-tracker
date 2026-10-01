@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Protein">
+<title>Protein Tracker</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;color:#171717;background:#f5f3ee}
+body{padding:0}
+.app{max-width:620px;margin:0 auto;padding:28px 18px 105px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+h1{font-size:32px;line-height:1;margin:4px 0 0;letter-spacing:-1px}
+h2{font-size:18px;margin:0}
+.eyebrow{font-size:11px;font-weight:bold;letter-spacing:1.4px;text-transform:uppercase;color:#777}
+.card{background:#fff;border-radius:22px;box-shadow:0 7px 26px rgba(0,0,0,.055)}
+.hero{padding:25px}
+.total{font-size:62px;font-weight:bold;letter-spacing:-4px;line-height:1}
+.total small{font-size:25px;letter-spacing:-1px;margin-left:4px}
+.progress{height:12px;background:#e7e4dc;border-radius:20px;overflow:hidden;margin:24px 0 12px}
+#progressBar{height:100%;width:0;background:#171717;border-radius:20px}
+.meta{display:flex;justify-content:space-between;color:#666;font-size:13px}
+.sectionHead{display:flex;align-items:center;justify-content:space-between;margin:28px 2px 12px}
+button{font:inherit;border:0;cursor:pointer}
+.link{background:transparent;font-weight:bold;padding:8px}
+.mealGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mealBtn{background:#fff;border-radius:16px;padding:17px;text-align:left;box-shadow:0 4px 15px rgba(0,0,0,.04);font-weight:bold}
+.mealBtn span{display:block;margin-top:5px;font-size:13px;color:#777;font-weight:normal}
+.other{width:100%;margin-top:10px;padding:15px;background:transparent;border:1px dashed #aaa69c;border-radius:16px;font-weight:bold}
+.entries,.history{overflow:hidden}
+.row{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #eeeae3}
+.row:last-child{border-bottom:0}
+.rowTitle{font-weight:bold}
+.sub{font-size:11px;color:#999;margin-top:3px}
+.rowRight{display:flex;align-items:center;gap:10px}
+.remove{background:transparent;color:#999;font-size:22px;padding:2px 6px}
+.empty{text-align:center;color:#999;padding:25px}
+.manage{display:grid;gap:10px}
+.manageItem{background:#fff;border-radius:16px;padding:0;box-shadow:0 4px 15px rgba(0,0,0,.035)}
+.manageItem button{width:100%;background:transparent;text-align:left;padding:17px}
+.manageItem b{display:block}.manageItem span{font-size:13px;color:#777}
+nav{position:fixed;z-index:20;left:50%;bottom:12px;transform:translateX(-50%);width:calc(100% - 28px);max-width:590px;background:#fff;padding:7px;display:grid;grid-template-columns:repeat(3,1fr);border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,.14)}
+nav button{background:transparent;border-radius:14px;padding:12px 5px;font-weight:bold;color:#777}
+nav button.active{background:#171717;color:#fff}
+.iconBtn,.primary,.secondary,.danger{border-radius:12px;padding:11px 14px;font-weight:bold}
+.iconBtn,.secondary{background:#e9e7e1}.primary{background:#171717;color:#fff}.danger{background:#ffe6e2;color:#9a1b12}
+.small{padding:10px 14px}
+.hidden{display:none!important}
+.modal{position:fixed;z-index:100;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.42);padding:18px}
+.modalInner{background:#fff;border-radius:24px;padding:24px;max-width:440px;margin:12vh auto 0;box-shadow:0 22px 70px rgba(0,0,0,.3)}
+.modal h2{font-size:24px;margin:0 0 20px}
+label{display:block;font-size:13px;font-weight:bold;margin:15px 0;position:relative}
+input{display:block;width:100%;margin-top:7px;padding:14px;border:1px solid #d5d2ca;border-radius:12px;background:#fafafa;font:inherit;font-size:17px}
+.suffix{position:absolute;right:15px;bottom:14px;color:#888}
+.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:22px}
+.hint{font-size:13px;color:#777}
+@media(max-width:390px){.mealGrid{grid-template-columns:1fr}.total{font-size:55px}}
+</style>
+</head>
+<body>
+
+<div class="app">
+<section id="todayView">
+<header>
+<div><div class="eyebrow" id="todayDate">Today</div><h1>Protein Today</h1></div>
+<button id="settingsButton" class="iconBtn">⚙︎</button>
+</header>
+
+<div class="hero card">
+<div class="total"><span id="total">0</span><small>g</small></div>
+<div class="progress"><div id="progressBar"></div></div>
+<div class="meta"><span><b id="targetDisplay">120</b>g target</span><span><b id="remaining">120</b>g remaining</span></div>
+</div>
+
+<div class="sectionHead"><h2>Add a meal</h2><button id="newMealButton" class="link">＋ New meal</button></div>
+<div id="mealButtons" class="mealGrid"></div>
+<button id="otherButton" class="other">＋ Other protein amount</button>
+
+<div class="sectionHead"><h2>Today's entries</h2></div>
+<div id="entries" class="entries card"></div>
+</section>
+
+<section id="historyView" class="hidden">
+<header><div><div class="eyebrow">Previous days</div><h1>History</h1></div></header>
+<div id="historyList" class="history card"></div>
+</section>
+
+<section id="mealsView" class="hidden">
+<header><div><div class="eyebrow">Your shortcuts</div><h1>Meals</h1></div><button id="addMealButton" class="primary small">＋ Add</button></header>
+<div id="manageMeals" class="manage"></div>
+</section>
+
+<nav>
+<button id="navToday" class="active">Today</button>
+<button id="navHistory">History</button>
+<button id="navMeals">Meals</button>
+</nav>
+</div>
+
+<div id="mealModal" class="modal hidden"><div class="modalInner">
+<h2 id="mealModalTitle">New meal</h2>
+<label>Meal name<input id="mealName" type="text" maxlength="40" placeholder="e.g. Weetabix x6"></label>
+<label>Protein<input id="mealProtein" type="number" min="0.1" max="999" step="0.1"><span class="suffix">g</span></label>
+<input id="mealId" type="hidden">
+<div class="actions"><button id="cancelMeal" class="secondary">Cancel</button><button id="deleteMeal" class="danger hidden">Delete</button><button id="saveMeal" class="primary">Save meal</button></div>
+</div></div>
+
+<div id="otherModal" class="modal hidden"><div class="modalInner">
+<h2>Other protein</h2>
+<label>Protein amount<input id="otherProtein" type="number" min="0.1" max="999" step="0.1"><span class="suffix">g</span></label>
+<div class="actions"><button id="cancelOther" class="secondary">Cancel</button><button id="saveOther" class="primary">Add</button></div>
+</div></div>
+
+<div id="settingsModal" class="modal hidden"><div class="modalInner">
+<h2>Daily target</h2>
+<label>Protein target<input id="targetInput" type="number" min="1" max="999" step="1"><span class="suffix">g</span></label>
+<p class="hint">You can change this whenever you like.</p>
+<div class="actions"><button id="cancelSettings" class="secondary">Cancel</button><button id="saveSettings" class="primary">Save</button></div>
+</div></div>
+
+<script>
+(function(){
+"use strict";
+var STORAGE_KEY="proteinTrackerV12";
+function E(id){return document.getElementById(id)}
+function id(){return "p"+(new Date().getTime())+Math.floor(Math.random()*100000)}
+function pad(n){return n<10?"0"+n:""+n}
+function key(d){d=d||new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function read(){try{var s=window.localStorage.getItem(STORAGE_KEY);return s?JSON.parse(s):null}catch(err){return null}}
+var data=read();
+if(!data){data={target:120,meals:[{id:id(),name:"Weetabix x6",protein:23}],days:{}}}
+function save(){try{window.localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}catch(err){}}
+function day(){var k=key();if(!data.days[k])data.days[k]={entries:[]};return data.days[k]}
+function total(k){var a=(data.days[k]&&data.days[k].entries)?data.days[k].entries:[],t=0,i;for(i=0;i<a.length;i++)t+=Number(a[i].protein);return Math.round(t*10)/10}
+function fmt(n){n=Number(n);return n%1===0?String(n):n.toFixed(1)}
+function clean(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function openModal(x){E(x).className="modal"}
+function closeModal(x){E(x).className="modal hidden"}
+function render(){
+ var k=key(),d=day(),t=total(k),r=Math.max(0,data.target-t),i,m,html="";
+ E("todayDate").innerHTML=new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
+ E("total").innerHTML=fmt(t);E("targetDisplay").innerHTML=fmt(data.target);E("remaining").innerHTML=fmt(r);
+ E("progressBar").style.width=Math.min(100,(t/data.target)*100)+"%";
+ for(i=0;i<data.meals.length;i++){m=data.meals[i];html+='<button class="mealBtn" data-add="'+m.id+'">'+clean(m.name)+'<span>'+fmt(m.protein)+'g protein</span></button>'}
+ E("mealButtons").innerHTML=html||'<div class="empty">Add your first regular meal.</div>';
+ html="";
+ for(i=d.entries.length-1;i>=0;i--){m=d.entries[i];html+='<div class="row"><div><div class="rowTitle">'+clean(m.name)+'</div><div class="sub">'+clean(m.time||"")+'</div></div><div class="rowRight"><b>'+fmt(m.protein)+'g</b><button class="remove" data-remove="'+m.id+'">×</button></div></div>'}
+ E("entries").innerHTML=html||'<div class="empty">Nothing logged yet today.</div>';
+ html="";
+ for(i=0;i<data.meals.length;i++){m=data.meals[i];html+='<div class="manageItem"><button data-edit="'+m.id+'"><b>'+clean(m.name)+'</b><span>'+fmt(m.protein)+'g protein · tap to edit</span></button></div>'}
+ E("manageMeals").innerHTML=html||'<div class="empty">No saved meals yet.</div>';
+ var ks=[],x;for(x in data.days){if(data.days.hasOwnProperty(x)&&x!==k)ks.push(x)}ks.sort();ks.reverse();html="";
+ for(i=0;i<ks.length;i++){var p=ks[i].split("-"),dd=new Date(Number(p[0]),Number(p[1])-1,Number(p[2]));html+='<div class="row"><span>'+dd.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})+'</span><b>'+fmt(total(ks[i]))+'g</b></div>'}
+ E("historyList").innerHTML=html||'<div class="empty">Previous daily totals will appear here.</div>';
+ save()
+}
+function show(view,nav){
+ E("todayView").className=view==="todayView"?"":"hidden";E("historyView").className=view==="historyView"?"":"hidden";E("mealsView").className=view==="mealsView"?"":"hidden";
+ E("navToday").className=nav==="navToday"?"active":"";E("navHistory").className=nav==="navHistory"?"active":"";E("navMeals").className=nav==="navMeals"?"active":"";
+ render()
+}
+window.Protein={
+ addSaved:function(mid){var i,m;for(i=0;i<data.meals.length;i++){if(data.meals[i].id===mid){m=data.meals[i];break}}if(m){add(m.name,m.protein)}},
+ removeEntry:function(eid){var d=day(),a=[],i;for(i=0;i<d.entries.length;i++){if(d.entries[i].id!==eid)a.push(d.entries[i])}d.entries=a;render()},
+ editMeal:function(mid){var i,m=null;for(i=0;i<data.meals.length;i++){if(data.meals[i].id===mid){m=data.meals[i];break}}E("mealId").value=m?m.id:"";E("mealName").value=m?m.name:"";E("mealProtein").value=m?m.protein:"";E("mealModalTitle").innerHTML=m?"Edit meal":"New meal";E("deleteMeal").className=m?"danger":"danger hidden";openModal("mealModal")}
+};
+function add(name,p){var n=new Date();day().entries.push({id:id(),name:name,protein:Number(p),time:pad(n.getHours())+":"+pad(n.getMinutes())});render()}
+
+document.onclick=function(ev){
+ var n=ev.target||ev.srcElement;
+ while(n&&n!==document){
+  if(n.getAttribute){
+   var a=n.getAttribute("data-add");
+   var r=n.getAttribute("data-remove");
+   var ed=n.getAttribute("data-edit");
+   if(a){Protein.addSaved(a);return}
+   if(r){Protein.removeEntry(r);return}
+   if(ed){Protein.editMeal(ed);return}
+  }
+  n=n.parentNode;
+ }
+};
+
+E("newMealButton").onclick=function(){Protein.editMeal("")};E("addMealButton").onclick=function(){Protein.editMeal("")};
+E("cancelMeal").onclick=function(){closeModal("mealModal")};
+E("saveMeal").onclick=function(){var name=E("mealName").value.replace(/^\s+|\s+$/g,""),p=Number(E("mealProtein").value),mid=E("mealId").value,i;if(!name||!p){alert("Please enter a meal name and protein amount.");return}if(mid){for(i=0;i<data.meals.length;i++){if(data.meals[i].id===mid){data.meals[i].name=name;data.meals[i].protein=p;break}}}else{data.meals.push({id:id(),name:name,protein:p})}save();closeModal("mealModal");render()};
+E("deleteMeal").onclick=function(){var mid=E("mealId").value,i,a=[];if(mid&&confirm("Delete this saved meal? Existing entries will remain unchanged.")){for(i=0;i<data.meals.length;i++){if(data.meals[i].id!==mid)a.push(data.meals[i])}data.meals=a;save();closeModal("mealModal");render()}};
+E("otherButton").onclick=function(){E("otherProtein").value="";openModal("otherModal")};E("cancelOther").onclick=function(){closeModal("otherModal")};
+E("saveOther").onclick=function(){var p=Number(E("otherProtein").value);if(!p){alert("Please enter a protein amount.");return}add("Other",p);closeModal("otherModal")};
+E("settingsButton").onclick=function(){E("targetInput").value=data.target;openModal("settingsModal")};E("cancelSettings").onclick=function(){closeModal("settingsModal")};
+E("saveSettings").onclick=function(){var t=Number(E("targetInput").value);if(!t){alert("Please enter a daily target.");return}data.target=t;save();closeModal("settingsModal");render()};
+E("navToday").onclick=function(){show("todayView","navToday")};E("navHistory").onclick=function(){show("historyView","navHistory")};E("navMeals").onclick=function(){show("mealsView","navMeals")};
+render();
+})();
+</script>
+</body>
+</html>
