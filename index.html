@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Protein">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f5f3ee">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Protein Tracker</title>
 <style>
 *{box-sizing:border-box}
@@ -55,7 +59,7 @@ label{display:block;font-size:13px;font-weight:bold;margin:15px 0;position:relat
 input{display:block;width:100%;margin-top:7px;padding:14px;border:1px solid #d5d2ca;border-radius:12px;background:#fafafa;font:inherit;font-size:17px}
 .suffix{position:absolute;right:15px;bottom:14px;color:#888}
 .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:22px}
-.hint{font-size:13px;color:#777}
+.hint{font-size:13px;color:#777}.backupBlock{margin-top:24px;padding-top:20px;border-top:1px solid #eeeae3}.backupBlock h3{font-size:16px;margin:0 0 8px}.backupButtons{display:flex;gap:8px;flex-wrap:wrap}.backupButtons button{flex:1;min-width:135px}
 @media(max-width:390px){.mealGrid{grid-template-columns:1fr}.total{font-size:55px}}
 </style>
 </head>
@@ -117,6 +121,15 @@ input{display:block;width:100%;margin-top:7px;padding:14px;border:1px solid #d5d
 <h2>Daily target</h2>
 <label>Protein target<input id="targetInput" type="number" min="1" max="999" step="1"><span class="suffix">g</span></label>
 <p class="hint">You can change this whenever you like.</p>
+<div class="backupBlock">
+  <h3>Backup &amp; Restore</h3>
+  <p class="hint">Your data normally stays only on this device. Export a backup file if you want a safety copy.</p>
+  <div class="backupButtons">
+    <button id="exportBackup" class="secondary" type="button">Export backup</button>
+    <button id="restoreBackup" class="secondary" type="button">Restore backup</button>
+  </div>
+  <input id="backupFile" type="file" accept=".json,application/json" class="hidden">
+</div>
 <div class="actions"><button id="cancelSettings" class="secondary">Cancel</button><button id="saveSettings" class="primary">Save</button></div>
 </div></div>
 
@@ -192,8 +205,43 @@ E("saveOther").onclick=function(){var p=Number(E("otherProtein").value);if(!p){a
 E("settingsButton").onclick=function(){E("targetInput").value=data.target;openModal("settingsModal")};E("cancelSettings").onclick=function(){closeModal("settingsModal")};
 E("saveSettings").onclick=function(){var t=Number(E("targetInput").value);if(!t){alert("Please enter a daily target.");return}data.target=t;save();closeModal("settingsModal");render()};
 E("navToday").onclick=function(){show("todayView","navToday")};E("navHistory").onclick=function(){show("historyView","navHistory")};E("navMeals").onclick=function(){show("mealsView","navMeals")};
+
+E("exportBackup").onclick=function(){
+ var payload={app:"Protein Tracker",version:"1.4",exported:new Date().toISOString(),data:data};
+ var blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+ var url=(window.URL||window.webkitURL).createObjectURL(blob);
+ var a=document.createElement("a");
+ a.href=url;
+ a.download="protein-tracker-backup-"+key()+".json";
+ document.body.appendChild(a);
+ a.click();
+ document.body.removeChild(a);
+ setTimeout(function(){(window.URL||window.webkitURL).revokeObjectURL(url)},1000);
+};
+
+E("restoreBackup").onclick=function(){E("backupFile").click()};
+E("backupFile").onchange=function(ev){
+ var file=ev.target.files&&ev.target.files[0];
+ if(!file)return;
+ var reader=new FileReader();
+ reader.onload=function(){
+  try{
+   var parsed=JSON.parse(reader.result);
+   var incoming=parsed.data||parsed;
+   if(!incoming || typeof incoming.target==="undefined" || !incoming.meals || !incoming.days) throw new Error("bad");
+   if(confirm("Restore this backup? This will replace the Protein Tracker data currently stored on this device.")){
+    data=incoming;save();closeModal("settingsModal");render();alert("Backup restored.");
+   }
+  }catch(err){alert("That file does not look like a valid Protein Tracker backup.")}
+  E("backupFile").value="";
+ };
+ reader.readAsText(file);
+};
 render();
 })();
+</script>
+<script>
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js");});}
 </script>
 </body>
 </html>
